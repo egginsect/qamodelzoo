@@ -5,7 +5,8 @@ import ipdb
 import tensorflow as tf
 from indexer import Indexer
 from tfrecord import TFRecordManager
-
+from glob import glob
+import multiprocessing
 
 def normalize_answer(s):
     """Lower text and remove punctuation, articles and extra whitespace."""
@@ -49,17 +50,19 @@ class TrainingData(object):
         for item in self.data['data']:
             for qapair in SQuADData(item):
                 data = {'question':qapair.question,
-                        'answer':qapair.answer}
-                yield tuple([lambda text: self.indexer.index_sentence(text.split()), triplet))
+                        'answer':qapair.answer,
+                        'passage':qapair.passage}
+                yield {k:self.indexer.index_sentence(text.split()) for k, text in data.items()}
 
 if __name__=="__main__":
     reader = TrainingData('../data/train-v1.1.json', '../glove/glove.6B.100d.txt')
     tfmanager = TFRecordManager()
-    ipdb.set_trace()
-    tfmanager.write_tfrecords(reader, 'squad', 'data/processed')
-    ipdb.set_trace()
-    dataset = tf.data.Dataset.from_generator(reader.__iter__, (tf.int64, tf.int64, tf.int64),
-                           (tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])))
+    fns = tfmanager.load_tfrecords('../data/processed')
+    dataset = tf.data.TFRecordDataset(fns)
+    decode_func = TFRecordManager.tfrecord_decoder(glob('../data/processed/*.json')[0])
+
+    dataset = dataset.map(decode_func, num_parallel_calls=multiprocessing.cpu_count())
+    dataset = dataset.padded_batch(10, padded_shapes=dataset.output_shapes)
     sess = tf.InteractiveSession()
     train_iterator = dataset.make_one_shot_iterator()
     train_iterator_handle = sess.run(train_iterator.string_handle())
@@ -68,5 +71,4 @@ if __name__=="__main__":
     next_element = iterator.get_next()
     ipdb.set_trace()
     train_data = sess.run(next_element, feed_dict={handle: train_iterator_handle})
-    ipdb.set_trace()
 
