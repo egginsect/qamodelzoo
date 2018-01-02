@@ -6,6 +6,10 @@ import glob
 import json
 import ipdb
 class TFRecordManager(object):
+    """
+    TF Record Manager that detects type and encode data into TF Records.
+    Decode function will be automatically generated when encoding into TF Records.
+    """
     encode_methods = flatten({
         'int': lambda value: tf.train.Feature(int64_list=tf.train.Int64List(value=[value])),
         'float': lambda value: tf.train.Feature(int64_list=tf.train.FloatList(value=[value])),
@@ -43,6 +47,7 @@ class TFRecordManager(object):
         self.construct_decode_functions = True
 
     def encode(self, data):
+        """Encode data to TF Record"""
         feature_dict = {}
         for key, value in data.items():
             if isinstance(value, collections.Iterable):
@@ -76,6 +81,7 @@ class TFRecordManager(object):
 
     @staticmethod
     def tfrecord_decoder(decode_json_file):
+        """Function to generate decoder function given decode json file"""
         with open(decode_json_file) as f:
             decode_dict = json.load(f)
         feature_def = {}

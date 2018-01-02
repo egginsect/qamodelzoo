@@ -27,11 +27,13 @@ def normalize_answer(s):
 
 
 class QAPair(namedtuple('QAPair', 'question answer_start answer passage id')):
+    """Namedtuple used to store question, answer passage triplets"""
     def __new__(cls, question, ansdict, passage, id):
 
         return super(QAPair, cls).__new__(cls, question, ansdict['answer_start'], ansdict['text'], passage, id)
 
 class SQuADData(object):
+    """SQuaD Data Object"""
     def __init__(self, data):
         self.title = data['title']
         self.data = data['paragraphs']
@@ -42,6 +44,7 @@ class SQuADData(object):
                     yield QAPair(qapair['question'], answer, item['context'], qapair['id'])
 
 class TrainingData(object):
+    "SQuAD data iterator"
     def __init__(self, infile, vocabfile):
         self.indexer = Indexer(vocabfile, allow_vocab_growth=True)
         with open(infile) as f:
