@@ -1,15 +1,15 @@
 from collections import OrderedDict
 class Indexer(object):
-    def __init__(self, vocabfile, allow_growth=False):
+    def __init__(self, vocabfile, allow_vocab_growth=False):
         self.vocab = OrderedDict([('PAD',0), ('UNK', 1)])
-        self.allow_growth = allow_growth
+        self.allow_vocab_growth = allow_vocab_growth
         with open(vocabfile) as f:
             for line in f:
                 self.vocab[line.split()[0]] = len(self.vocab)
         self.idx2word = OrderedDict(zip(self.vocab.values(), self.vocab.keys()))
 
     def index_word(self, word):
-        if self.allow_growth:
+        if self.allow_vocab_growth:
             self.vocab[word] = self.vocab.get(word, len(self.vocab))
             return self.vocab[word]
         else:

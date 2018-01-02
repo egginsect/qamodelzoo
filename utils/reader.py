@@ -43,7 +43,7 @@ class SQuADData(object):
 
 class TrainingData(object):
     def __init__(self, infile, vocabfile):
-        self.indexer = Indexer(vocabfile, allow_growth=True)
+        self.indexer = Indexer(vocabfile, allow_vocab_growth=True)
         with open(infile) as f:
             self.data  = json.load(f)
     def __iter__(self):
@@ -57,9 +57,12 @@ class TrainingData(object):
 if __name__=="__main__":
     reader = TrainingData('../data/train-v1.1.json', '../glove/glove.6B.100d.txt')
     tfmanager = TFRecordManager()
+    tfmanager.write_tfrecords(reader, 'squad', '../data/processed', save_freq = 10)
+    with open(os.path.join('../data/processed', 'extended_vocab.json'), 'w') as f:
+         json.dump(reader.indexer.vocab, f)
     fns = tfmanager.load_tfrecords('../data/processed')
     dataset = tf.data.TFRecordDataset(fns)
-    decode_func = TFRecordManager.tfrecord_decoder(glob('../data/processed/*.json')[0])
+    decode_func = TFRecordManager.tfrecord_decoder(glob('../data/processed/decode_dict.json')[0])
 
     dataset = dataset.map(decode_func, num_parallel_calls=multiprocessing.cpu_count())
     dataset = dataset.padded_batch(10, padded_shapes=dataset.output_shapes)
