@@ -1,7 +1,7 @@
 import collections
 import os
 import tensorflow as tf
-from misc import flatten, unflatten
+from .misc import flatten, unflatten
 import glob
 import json
 import ipdb
@@ -57,7 +57,7 @@ class TFRecordManager(object):
             else:
                 feature_dict[key] = TFRecordManager.encode_methods[type(value).__name__](value)
                 if self.construct_decode_functions:
-                    self.decode_functions[key] = type(value[0]).__name__
+                    self.decode_functions[key] = type(value).__name__
         if self.construct_decode_functions:
             self.construct_decode_functions = False
         return tf.train.Example(features=tf.train.Features(feature=feature_dict))
@@ -93,8 +93,15 @@ class TFRecordManager(object):
 
         return decode_tfrecord
 
-
-    def load_tfrecords(self, tfrecord_folder):
+    @staticmethod
+    def construct_place_holder(decode_json_file):
+        with open(decode_json_file) as f:
+            decode_dict = json.load(f)
+        feature_def = {}
+        for key, value in decode_dict.items():
+            feature_def[key] = TFRecordManager.decode_methods[value]()
+    @staticmethod
+    def load_tfrecords(tfrecord_folder):
         tfrecord_fns = glob.glob(os.path.join(tfrecord_folder, '*.tfrecord'))
         return tfrecord_fns
 
